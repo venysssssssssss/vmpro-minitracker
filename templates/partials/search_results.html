@@ -1,0 +1,27 @@
+<!-- Resultados de busca -->
+<div class="space-y-2">
+    {% for result in results %}
+    <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg cursor-pointer border border-gray-200">
+        <div class="flex items-center space-x-3">
+            <div class="flex-shrink-0">
+                <div class="h-8 w-8 rounded-full flex items-center justify-center text-white text-sm font-bold
+                           {% if type == 'stocks' %}bg-gradient-to-r from-blue-400 to-blue-600{% else %}bg-gradient-to-r from-orange-400 to-orange-600{% endif %}">
+                    {{ result.symbol[:2] }}
+                </div>
+            </div>
+            <div>
+                <div class="text-sm font-medium text-gray-900">{{ result.symbol }}</div>
+                <div class="text-xs text-gray-500 truncate max-w-[200px]">{{ result.name }}</div>
+            </div>
+        </div>
+        <div class="text-right">
+            <div class="text-sm font-medium text-gray-900">
+                ${{ "%.2f"|format(result.price) }}
+            </div>
+            <div class="text-xs {% if result.is_gaining %}text-green-600{% else %}text-red-600{% endif %}">
+                {{ "+" if result.is_gaining else "" }}{{ "%.2f"|format(result.change_percent) }}%
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>

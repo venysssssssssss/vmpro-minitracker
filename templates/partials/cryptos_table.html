@@ -1,0 +1,123 @@
+<!-- Tabela de criptomoedas para HTMX -->
+<div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
+    <table class="min-w-full divide-y divide-gray-300">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Criptomoeda
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Preço
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Variação 24h
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Volume 24h
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Market Cap
+                </th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for crypto in cryptos %}
+            <tr class="hover:bg-gray-50 transition-colors smooth-transition">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 h-8 w-8">
+                            <div class="h-8 w-8 rounded-full bg-gradient-to-r from-orange-400 to-orange-600 flex items-center justify-center text-white text-sm font-bold">
+                                {{ crypto.symbol[:2] }}
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-900">{{ crypto.symbol }}</div>
+                            <div class="text-sm text-gray-500 truncate max-w-[150px]" title="{{ crypto.name }}">
+                                {{ crypto.name }}
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">
+                        {% if crypto.price >= 1 %}
+                            ${{ "%.2f"|format(crypto.price) }}
+                        {% elif crypto.price >= 0.01 %}
+                            ${{ "%.4f"|format(crypto.price) }}
+                        {% else %}
+                            ${{ "%.6f"|format(crypto.price) }}
+                        {% endif %}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        Ant: 
+                        {% if crypto.previous_close >= 1 %}
+                            ${{ "%.2f"|format(crypto.previous_close) }}
+                        {% elif crypto.previous_close >= 0.01 %}
+                            ${{ "%.4f"|format(crypto.previous_close) }}
+                        {% else %}
+                            ${{ "%.6f"|format(crypto.previous_close) }}
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        {% set change_class = "text-green-600" if crypto.is_gaining else "text-red-600" %}
+                        {% set arrow = "↗" if crypto.is_gaining else "↘" %}
+                        
+                        <span class="{{ change_class }} text-sm font-medium">
+                            {{ arrow }} {{ "%.2f"|format(crypto.change_percent_24h|abs) }}%
+                        </span>
+                    </div>
+                    <div class="text-xs {{ change_class }}">
+                        {{ "+" if crypto.is_gaining else "" }}${{ "%.4f"|format(crypto.change_amount) }}
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {% if crypto.volume_24h %}
+                        {% if crypto.volume_24h >= 1000000000 %}
+                            ${{ "%.1f"|format(crypto.volume_24h / 1000000000) }}B
+                        {% elif crypto.volume_24h >= 1000000 %}
+                            ${{ "%.1f"|format(crypto.volume_24h / 1000000) }}M
+                        {% else %}
+                            ${{ "{:,.0f}"|format(crypto.volume_24h) }}
+                        {% endif %}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {% if crypto.market_cap %}
+                        {% if crypto.market_cap >= 1000000000000 %}
+                            ${{ "%.1f"|format(crypto.market_cap / 1000000000000) }}T
+                        {% elif crypto.market_cap >= 1000000000 %}
+                            ${{ "%.1f"|format(crypto.market_cap / 1000000000) }}B
+                        {% elif crypto.market_cap >= 1000000 %}
+                            ${{ "%.1f"|format(crypto.market_cap / 1000000) }}M
+                        {% else %}
+                            ${{ "{:,}".format(crypto.market_cap) }}
+                        {% endif %}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% if not cryptos %}
+    <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">Nenhuma criptomoeda encontrada</h3>
+        <p class="mt-1 text-sm text-gray-500">Não foi possível carregar dados de criptomoedas no momento.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Footer da tabela com timestamp -->
+<div class="mt-4 flex justify-between items-center text-sm text-gray-500">
+    <span>{{ cryptos|length }} criptomoedas exibidas</span>
+    <span>Atualizado em {{ now().strftime('%H:%M:%S') }}</span>
+</div>

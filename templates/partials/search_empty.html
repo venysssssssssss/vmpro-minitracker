@@ -1,0 +1,10 @@
+<!-- Resultados de busca vazios -->
+{% if message %}
+<div class="text-center py-4">
+    <p class="text-sm text-gray-500">{{ message }}</p>
+</div>
+{% else %}
+<div class="text-center py-4">
+    <p class="text-sm text-gray-500">Digite pelo menos 2 caracteres para buscar</p>
+</div>
+{% endif %}

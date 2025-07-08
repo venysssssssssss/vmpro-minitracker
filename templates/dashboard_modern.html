@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VmPro Mini Tracker - Dashboard Financeiro</title>
+    
+    <!-- HTMX para interatividade -->
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    
+    <!-- Tailwind CSS para design system -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons para iconografia consistente -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- Chart.js para visualizações -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    
+    <!-- Configuração do Design System -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        success: {
+                            50: '#f0fdf4',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                        },
+                        danger: {
+                            50: '#fef2f2',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                        },
+                        neutral: {
+                            50: '#f9fafb',
+                            100: '#f3f4f6',
+                            200: '#e5e7eb',
+                            800: '#1f2937',
+                            900: '#111827',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+                        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Design System - Custom Properties */
+        :root {
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --border-radius: 0.5rem;
+            --transition-fast: 150ms ease-in-out;
+            --transition-normal: 300ms ease-in-out;
+        }
+        
+        /* Smooth transitions para todos os elementos interativos */
+        * {
+            transition: var(--transition-fast);
+        }
+        
+        /* Loading states */
+        .htmx-indicator {
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+        
+        .htmx-request .htmx-indicator {
+            opacity: 1;
+        }
+        
+        .htmx-request.htmx-indicator {
+            opacity: 1;
+        }
+        
+        /* Animações personalizadas */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(1rem);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        /* Scroll suave para tabelas */
+        .custom-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: #e5e7eb #f9fafb;
+        }
+        
+        .custom-scroll::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f9fafb;
+            border-radius: 3px;
+        }
+        
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 3px;
+        }
+        
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #d1d5db;
+        }
+        
+        /* Estados de loading mais elegantes */
+        .skeleton {
+            background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Melhor contraste para acessibilidade */
+        .text-success { color: #059669; }
+        .text-danger { color: #dc2626; }
+        .bg-success { background-color: #d1fae5; }
+        .bg-danger { background-color: #fee2e2; }
+        
+        /* Focus states melhorados */
+        .focus-ring:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        
+        /* Hover states consistentes */
+        .hover-lift:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+    
+    <!-- Fonte Inter para melhor legibilidade -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="bg-neutral-50 font-sans antialiased">
+    <!-- Header Principal -->
+    <header class="bg-white border-b border-neutral-200 sticky top-0 z-50 backdrop-blur-sm bg-white/90">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo e Título -->
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-primary-500 to-primary-600 rounded-lg">
+                        <i data-lucide="trending-up" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-neutral-900">VmPro Mini Tracker</h1>
+                        <p class="text-sm text-neutral-600 hidden sm:block">Dashboard Financeiro em Tempo Real</p>
+                    </div>
+                </div>
+                
+                <!-- Controles do Header -->
+                <div class="flex items-center space-x-3">
+                    <!-- Indicador de Status -->
+                    <div class="flex items-center space-x-2 px-3 py-1.5 bg-success-50 rounded-full">
+                        <div class="w-2 h-2 bg-success-500 rounded-full animate-pulse"></div>
+                        <span class="text-sm font-medium text-success-600">Online</span>
+                    </div>
+                    
+                    <!-- Botão de Atualização -->
+                    <button 
+                        hx-post="/api/v2/admin/cache/clear"
+                        hx-trigger="click"
+                        hx-indicator="#refresh-indicator"
+                        class="flex items-center space-x-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg focus-ring hover-lift"
+                    >
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Atualizar</span>
+                    </button>
+                    
+                    <div id="refresh-indicator" class="htmx-indicator">
+                        <i data-lucide="loader-2" class="w-5 h-5 text-primary-500 animate-spin"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Cards de Estatísticas -->
+        <section class="mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Card Ações -->
+                <div class="bg-white p-6 rounded-xl shadow-card hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-neutral-600">Ações Monitoradas</p>
+                            <p class="text-2xl font-bold text-neutral-900 mt-1">15</p>
+                            <p class="text-sm text-success-600 mt-1">
+                                <i data-lucide="trending-up" class="w-3 h-3 inline mr-1"></i>
+                                +2.5% hoje
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center">
+                            <i data-lucide="bar-chart-3" class="w-6 h-6 text-primary-500"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card Criptomoedas -->
+                <div class="bg-white p-6 rounded-xl shadow-card hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-neutral-600">Criptomoedas</p>
+                            <p class="text-2xl font-bold text-neutral-900 mt-1">10</p>
+                            <p class="text-sm text-success-600 mt-1">
+                                <i data-lucide="trending-up" class="w-3 h-3 inline mr-1"></i>
+                                +5.2% hoje
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-50 rounded-lg flex items-center justify-center">
+                            <i data-lucide="coins" class="w-6 h-6 text-yellow-500"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card Market Cap -->
+                <div class="bg-white p-6 rounded-xl shadow-card hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-neutral-600">Market Cap Total</p>
+                            <p class="text-2xl font-bold text-neutral-900 mt-1">$2.8T</p>
+                            <p class="text-sm text-danger-600 mt-1">
+                                <i data-lucide="trending-down" class="w-3 h-3 inline mr-1"></i>
+                                -0.8% hoje
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+                            <i data-lucide="dollar-sign" class="w-6 h-6 text-green-500"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card Performance -->
+                <div class="bg-white p-6 rounded-xl shadow-card hover-lift">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-neutral-600">Performance API</p>
+                            <p class="text-2xl font-bold text-neutral-900 mt-1">98.5%</p>
+                            <p class="text-sm text-success-600 mt-1">
+                                <i data-lucide="zap" class="w-3 h-3 inline mr-1"></i>
+                                Excelente
+                            </p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
+                            <i data-lucide="activity" class="w-6 h-6 text-purple-500"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção Principal - Tabs -->
+        <section class="bg-white rounded-xl shadow-card overflow-hidden">
+            <!-- Tab Navigation -->
+            <div class="border-b border-neutral-200">
+                <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                    <button 
+                        onclick="switchTab('stocks')"
+                        id="stocks-tab"
+                        class="tab-button active border-b-2 border-primary-500 py-4 px-1 text-sm font-medium text-primary-600"
+                    >
+                        <i data-lucide="trending-up" class="w-4 h-4 inline mr-2"></i>
+                        Ações em Alta
+                    </button>
+                    <button 
+                        onclick="switchTab('crypto')"
+                        id="crypto-tab"
+                        class="tab-button border-b-2 border-transparent py-4 px-1 text-sm font-medium text-neutral-500 hover:text-neutral-700 hover:border-neutral-300"
+                    >
+                        <i data-lucide="coins" class="w-4 h-4 inline mr-2"></i>
+                        Criptomoedas
+                    </button>
+                </nav>
+            </div>
+            
+            <!-- Tab Content -->
+            <div class="p-6">
+                <!-- Controles de Filtro -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-semibold text-neutral-900" id="section-title">Ações em Alta</h2>
+                        <p class="text-sm text-neutral-600" id="section-subtitle">Atualizações em tempo real</p>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3">
+                        <!-- Filtro de Região (só para ações) -->
+                        <div id="region-filter" class="flex items-center space-x-2">
+                            <label class="text-sm font-medium text-neutral-700">Região:</label>
+                            <select 
+                                id="region-select"
+                                onchange="updateStocks()"
+                                class="px-3 py-2 border border-neutral-300 rounded-lg focus-ring text-sm"
+                            >
+                                <option value="US">🇺🇸 Estados Unidos</option>
+                                <option value="BR">🇧🇷 Brasil</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Filtro de Ordenação (só para crypto) -->
+                        <div id="order-filter" class="hidden flex items-center space-x-2">
+                            <label class="text-sm font-medium text-neutral-700">Ordenar por:</label>
+                            <select 
+                                id="order-select"
+                                onchange="updateCrypto()"
+                                class="px-3 py-2 border border-neutral-300 rounded-lg focus-ring text-sm"
+                            >
+                                <option value="percent_change_24h">📈 Variação 24h</option>
+                                <option value="market_cap">💎 Market Cap</option>
+                                <option value="volume">📊 Volume</option>
+                                <option value="price">💰 Preço</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Filtro de Quantidade -->
+                        <div class="flex items-center space-x-2">
+                            <label class="text-sm font-medium text-neutral-700">Mostrar:</label>
+                            <select 
+                                id="limit-select"
+                                onchange="updateCurrentTab()"
+                                class="px-3 py-2 border border-neutral-300 rounded-lg focus-ring text-sm"
+                            >
+                                <option value="10">10 itens</option>
+                                <option value="15">15 itens</option>
+                                <option value="20">20 itens</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Conteúdo das Tabs -->
+                <div class="min-h-96">
+                    <!-- Tab Ações -->
+                    <div id="stocks-content" class="tab-content">
+                        <div 
+                            id="stocks-container"
+                            hx-get="/htmx/stocks/trending?limit=10&region=US"
+                            hx-trigger="load, every 30s"
+                            hx-indicator="#stocks-loading"
+                            class="animate-fade-in-up"
+                        >
+                            <div id="stocks-loading" class="htmx-indicator">
+                                <div class="flex justify-center items-center py-12">
+                                    <div class="text-center">
+                                        <i data-lucide="loader-2" class="w-8 h-8 text-primary-500 animate-spin mx-auto mb-3"></i>
+                                        <p class="text-neutral-600">Carregando ações...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab Criptomoedas -->
+                    <div id="crypto-content" class="tab-content hidden">
+                        <div 
+                            id="crypto-container"
+                            hx-get="/htmx/crypto/trending?limit=10&order_by=percent_change_24h"
+                            hx-trigger="load, every 30s"
+                            hx-indicator="#crypto-loading"
+                            class="animate-fade-in-up"
+                        >
+                            <div id="crypto-loading" class="htmx-indicator">
+                                <div class="flex justify-center items-center py-12">
+                                    <div class="text-center">
+                                        <i data-lucide="loader-2" class="w-8 h-8 text-primary-500 animate-spin mx-auto mb-3"></i>
+                                        <p class="text-neutral-600">Carregando criptomoedas...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-neutral-200 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="text-neutral-600 text-sm">
+                    © 2025 VmPro Mini Tracker - Dados em tempo real via Yahoo Finance & CoinGecko
+                </div>
+                <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                    <a 
+                        href="/api/docs" 
+                        target="_blank"
+                        class="text-sm text-primary-600 hover:text-primary-700 flex items-center space-x-1"
+                    >
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                        <span>Documentação da API</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Estado global da aplicação
+        let currentTab = 'stocks';
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar ícones Lucide
+            lucide.createIcons();
+            
+            // Configurar HTMX
+            setupHtmx();
+            
+            // Inicializar timers
+            startAutoRefresh();
+        });
+        
+        // Função para trocar tabs
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Atualizar botões de tab
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active', 'border-primary-500', 'text-primary-600');
+                btn.classList.add('border-transparent', 'text-neutral-500');
+            });
+            
+            document.getElementById(tab + '-tab').classList.add('active', 'border-primary-500', 'text-primary-600');
+            document.getElementById(tab + '-tab').classList.remove('border-transparent', 'text-neutral-500');
+            
+            // Atualizar conteúdo
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            document.getElementById(tab + '-content').classList.remove('hidden');
+            
+            // Atualizar título e controles
+            if (tab === 'stocks') {
+                document.getElementById('section-title').textContent = 'Ações em Alta';
+                document.getElementById('section-subtitle').textContent = 'Mercados dos EUA e Brasil';
+                document.getElementById('region-filter').classList.remove('hidden');
+                document.getElementById('order-filter').classList.add('hidden');
+            } else {
+                document.getElementById('section-title').textContent = 'Criptomoedas em Alta';
+                document.getElementById('section-subtitle').textContent = 'Mercado global de criptomoedas';
+                document.getElementById('region-filter').classList.add('hidden');
+                document.getElementById('order-filter').classList.remove('hidden');
+            }
+            
+            // Trigger update
+            updateCurrentTab();
+        }
+        
+        // Funções de atualização
+        function updateStocks() {
+            const region = document.getElementById('region-select').value;
+            const limit = document.getElementById('limit-select').value;
+            
+            htmx.ajax('GET', `/htmx/stocks/trending?limit=${limit}&region=${region}`, {
+                target: '#stocks-container'
+            });
+        }
+        
+        function updateCrypto() {
+            const orderBy = document.getElementById('order-select').value;
+            const limit = document.getElementById('limit-select').value;
+            
+            htmx.ajax('GET', `/htmx/crypto/trending?limit=${limit}&order_by=${orderBy}`, {
+                target: '#crypto-container'
+            });
+        }
+        
+        function updateCurrentTab() {
+            if (currentTab === 'stocks') {
+                updateStocks();
+            } else {
+                updateCrypto();
+            }
+        }
+        
+        // Auto-refresh
+        function startAutoRefresh() {
+            setInterval(() => {
+                updateCurrentTab();
+            }, 30000); // 30 segundos
+        }
+        
+        // Configuração do HTMX
+        function setupHtmx() {
+            document.addEventListener('htmx:beforeRequest', function(evt) {
+                console.log('HTMX Request iniciada:', evt.detail.xhr.responseURL);
+            });
+            
+            document.addEventListener('htmx:afterRequest', function(evt) {
+                if (evt.detail.xhr.status !== 200) {
+                    console.error('HTMX Error:', evt.detail.xhr.status);
+                    showNotification('error', 'Erro ao carregar dados. Tentando novamente...');
+                }
+                
+                // Re-inicializar ícones após carregar conteúdo
+                lucide.createIcons();
+            });
+            
+            document.addEventListener('htmx:responseError', function(evt) {
+                showNotification('error', 'Erro de conexão. Verifique sua internet.');
+            });
+        }
+        
+        // Sistema de notificações simples
+        function showNotification(type, message) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 ${
+                type === 'error' ? 'bg-danger-500 text-white' : 'bg-success-500 text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+        
+        // Formatação de números
+        function formatCurrency(value, currency = 'USD') {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: currency,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+        
+        function formatNumber(value) {
+            if (value >= 1e12) return (value / 1e12).toFixed(1) + 'T';
+            if (value >= 1e9) return (value / 1e9).toFixed(1) + 'B';
+            if (value >= 1e6) return (value / 1e6).toFixed(1) + 'M';
+            if (value >= 1e3) return (value / 1e3).toFixed(1) + 'K';
+            return value.toString();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!-- Tabela de Criptomoedas Otimizada -->
+<div class="overflow-x-auto">
+    <table class="w-full">
+        <thead>
+            <tr class="border-b border-gray-600">
+                <th class="text-left py-3 px-2 font-semibold text-gray-300">Crypto</th>
+                <th class="text-right py-3 px-2 font-semibold text-gray-300">Preço</th>
+                <th class="text-right py-3 px-2 font-semibold text-gray-300">24h</th>
+                <th class="text-right py-3 px-2 font-semibold text-gray-300">7d</th>
+                <th class="text-right py-3 px-2 font-semibold text-gray-300">Market Cap</th>
+                <th class="text-center py-3 px-2 font-semibold text-gray-300">Rank</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for crypto in cryptos %}
+            <tr class="border-b border-gray-700 hover:bg-gray-800/50 transition-colors duration-200">
+                <td class="py-3 px-2">
+                    <div class="flex items-center space-x-3">
+                        {% if crypto.image %}
+                        <img src="{{ crypto.image }}" alt="{{ crypto.symbol }}" class="w-8 h-8 rounded-full">
+                        {% else %}
+                        <div class="w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center">
+                            <span class="text-xs font-bold text-white">{{ crypto.symbol[:2] }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="flex flex-col">
+                            <span class="font-medium text-white">{{ crypto.symbol }}</span>
+                            <span class="text-sm text-gray-400">
+                                {% if crypto.name %}
+                                    {{ crypto.name[:20] }}{% if crypto.name|length > 20 %}...{% endif %}
+                                {% else %}
+                                    {{ crypto.symbol }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-right py-3 px-2">
+                    <div class="flex flex-col">
+                        <span class="font-semibold text-white">
+                            {% if crypto.price < 1 %}
+                                $ {{ "%.8f"|format(crypto.price) }}
+                            {% elif crypto.price < 100 %}
+                                $ {{ "%.4f"|format(crypto.price) }}
+                            {% else %}
+                                $ {{ "%.2f"|format(crypto.price) }}
+                            {% endif %}
+                        </span>
+                    </div>
+                </td>
+                <td class="text-right py-3 px-2">
+                    <div class="flex flex-col items-end">
+                        <span class="font-semibold {% if crypto.change_percent_24h >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                            {% if crypto.change_percent_24h >= 0 %}🚀{% else %}📉{% endif %}
+                            {{ "%.2f"|format(crypto.change_percent_24h) }}%
+                        </span>
+                        <span class="text-sm {% if crypto.change_amount >= 0 %}text-green-300{% else %}text-red-300{% endif %}">
+                            {% if crypto.change_amount >= 0 %}+{% endif %}
+                            {% if crypto.change_amount < 1 %}
+                                {{ "%.6f"|format(crypto.change_amount) }}
+                            {% else %}
+                                {{ "%.2f"|format(crypto.change_amount) }}
+                            {% endif %}
+                        </span>
+                    </div>
+                </td>
+                <td class="text-right py-3 px-2">
+                    {% if crypto.change_percent_7d is defined %}
+                    <span class="font-medium {% if crypto.change_percent_7d >= 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                        {{ "%.2f"|format(crypto.change_percent_7d) }}%
+                    </span>
+                    {% else %}
+                    <span class="text-gray-500">-</span>
+                    {% endif %}
+                </td>
+                <td class="text-right py-3 px-2">
+                    {% if crypto.market_cap %}
+                    <span class="text-gray-300">
+                        {% if crypto.market_cap >= 1000000000000 %}
+                            $ {{ "%.1f"|format(crypto.market_cap / 1000000000000) }}T
+                        {% elif crypto.market_cap >= 1000000000 %}
+                            $ {{ "%.1f"|format(crypto.market_cap / 1000000000) }}B
+                        {% elif crypto.market_cap >= 1000000 %}
+                            $ {{ "%.1f"|format(crypto.market_cap / 1000000) }}M
+                        {% else %}
+                            $ {{ "%.0f"|format(crypto.market_cap) }}
+                        {% endif %}
+                    </span>
+                    {% else %}
+                    <span class="text-gray-500">-</span>
+                    {% endif %}
+                </td>
+                <td class="text-center py-3 px-2">
+                    {% if crypto.market_cap_rank %}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                        #{{ crypto.market_cap_rank }}
+                    </span>
+                    {% else %}
+                    <span class="text-gray-500">-</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% if not cryptos %}
+    <div class="text-center py-8 text-gray-400">
+        <i class="fab fa-bitcoin text-4xl mb-4 opacity-50"></i>
+        <p>Nenhuma criptomoeda encontrada</p>
+        <p class="text-sm">Verifique sua conexão ou tente novamente</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="mt-4 text-xs text-gray-500 text-center">
+    Última atualização: agora | Ordenação: {{ order_by }} | {{ cryptos|length }} criptomoedas
+</div>
