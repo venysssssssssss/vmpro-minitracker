@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Tracker - Ações & Cripto</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .dashboard-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .asset-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+        .asset-card:hover {
+            transform: translateY(-5px);
+        }
+        .price-up {
+            color: #28a745;
+        }
+        .price-down {
+            color: #dc3545;
+        }
+        .loading {
+            text-align: center;
+            padding: 50px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .section-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .portfolio-summary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .market-status-indicator {
+            margin-bottom: 20px;
+        }
+        .market-open {
+            color: #28a745;
+        }
+        .market-closed {
+            color: #ffc107;
+        }
+        .update-indicator {
+            text-align: center;
+            padding: 10px;
+            border-top: 1px solid #eee;
+            margin-top: 20px;
+        }
+        .real-time-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .performance-indicator {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .performance-high {
+            background: #d4edda;
+            color: #155724;
+        }
+        .performance-low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .asset-details {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <!-- Real-time status badge -->
+    <div class="real-time-badge" id="real-time-status">
+        <i class="fas fa-satellite-dish"></i> Tempo Real
+    </div>
+    <div class="container">
+        <div class="dashboard-container">
+            <div class="text-center mb-4">
+                <h1 class="display-4"><i class="fas fa-chart-line"></i> Mini Tracker</h1>
+                <p class="lead">Acompanhe as melhores ações e criptomoedas em tempo real</p>
+            </div>
+
+            <!-- Portfolio Summary -->
+            <div id="portfolio-section" class="portfolio-summary" style="display: none;">
+                <h3><i class="fas fa-wallet"></i> Meu Portfolio</h3>
+                <div id="portfolio-summary"></div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-filter"></i> <span data-translate="filters">Filtros</span></h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label for="region-filter" class="form-label" data-translate="region">Região</label>
+                                    <select class="form-select" id="region-filter">
+                                        <option value="all" data-translate="all">Todas</option>
+                                        <option value="BR">Brasil</option>
+                                        <option value="US">Estados Unidos</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="period-filter" class="form-label" data-translate="period">Período</label>
+                                    <select class="form-select" id="period-filter">
+                                        <option value="1D">1 Dia</option>
+                                        <option value="5D">5 Dias</option>
+                                        <option value="1M">1 Mês</option>
+                                        <option value="3M">3 Meses</option>
+                                        <option value="6M">6 Meses</option>
+                                        <option value="9M">9 Meses</option>
+                                        <option value="12M">12 Meses</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="currency-filter" class="form-label" data-translate="currency">Moeda</label>
+                                    <select class="form-select" id="currency-filter">
+                                        <option value="USD">USD - Dólar</option>
+                                        <option value="BRL">BRL - Real</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="language-filter" class="form-label" data-translate="language">Idioma</label>
+                                    <select class="form-select" id="language-filter">
+                                        <option value="pt-BR">Português</option>
+                                        <option value="en-US">English</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <button class="btn btn-primary" onclick="applyFilters()">
+                                        <i class="fas fa-sync-alt"></i> <span data-translate="apply_filters">Aplicar Filtros</span>
+                                    </button>
+                                    <button class="btn btn-secondary ms-2" onclick="resetFilters()">
+                                        <i class="fas fa-undo"></i> <span data-translate="reset_filters">Resetar</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Section -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" id="stock-search" class="form-control" placeholder="Buscar ação (ex: AAPL, GOOGL)" data-translate-placeholder="search_stock">
+                        <button class="btn btn-primary" onclick="searchStock()">
+                            <i class="fas fa-search"></i> <span data-translate="search_stock_btn">Buscar Ação</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" id="crypto-search" class="form-control" placeholder="Buscar cripto (ex: BTC, ETH)" data-translate-placeholder="search_crypto">
+                        <button class="btn btn-success" onclick="searchCrypto()">
+                            <i class="fas fa-search"></i> <span data-translate="search_crypto_btn">Buscar Cripto</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add to Portfolio Section -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#addToPortfolioModal">
+                        <i class="fas fa-plus"></i> <span data-translate="add_to_portfolio">Adicionar ao Portfolio</span>
+                    </button>
+                    <div class="float-end">
+                        <small class="text-muted">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span data-translate="exchange_rate">Taxa de Câmbio</span>: 
+                            <span id="exchange-rate-display">Carregando...</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Trending Stocks -->
+                <div class="col-md-6">
+                    <div class="section-header">
+                        <h3><i class="fas fa-trending-up"></i> <span data-translate="trending_stocks">Ações em Alta</span></h3>
+                        <small class="text-white-50" id="stocks-region-indicator">Todas as regiões</small>
+                    </div>
+                    <div id="trending-stocks">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p data-translate="loading_stocks">Carregando ações...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trending Cryptos -->
+                <div class="col-md-6">
+                    <div class="section-header">
+                        <h3><i class="fab fa-bitcoin"></i> <span data-translate="trending_cryptos">Criptos em Alta</span></h3>
+                        <small class="text-white-50" id="cryptos-period-indicator">1 Dia</small>
+                    </div>
+                    <div id="trending-cryptos">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p data-translate="loading_cryptos">Carregando criptomoedas...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Results -->
+            <div class="row" id="search-results" style="display: none;">
+                <div class="col-12">
+                    <div class="section-header">
+                        <h3 id="search-title"><i class="fas fa-search"></i> Resultados da Busca</h3>
+                    </div>
+                    <div id="search-content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add to Portfolio Modal -->
+    <div class="modal fade" id="addToPortfolioModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Adicionar ao Portfolio</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="portfolioForm">
+                        <div class="mb-3">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-select" id="assetType">
+                                <option value="stock">Ação</option>
+                                <option value="crypto">Criptomoeda</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Símbolo</label>
+                            <input type="text" class="form-control" id="assetSymbol" placeholder="Ex: AAPL, BTC" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Quantidade</label>
+                            <input type="number" class="form-control" id="assetQuantity" step="0.00001" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Preço de Compra</label>
+                            <input type="number" class="form-control" id="assetPrice" step="0.01" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="addToPortfolio()">Adicionar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/dashboard.js"></script>
+</body>
+</html>
